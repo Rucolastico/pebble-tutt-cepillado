@@ -1,7 +1,7 @@
 {
   "name": "t-tt",
   "author": "Rucolastico",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "keywords": [
     "pebble-app"
   ],
@@ -25,7 +25,31 @@
     },
     "messageKeys": [],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "font",
+          "name": "FREDOKA_GRANDE_96",
+          "file": "fonts/Fredoka-SemiBold.ttf",
+          "characterRegex": "[0-9]",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "FREDOKA_CHICA_72",
+          "file": "fonts/Fredoka-SemiBold.ttf",
+          "characterRegex": "[0-9]",
+          "targetPlatforms": [
+            "basalt",
+            "chalk",
+            "diorite",
+            "flint",
+            "aplite"
+          ]
+        }
+      ]
     }
   }
 }
