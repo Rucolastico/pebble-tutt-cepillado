@@ -7,8 +7,8 @@
 #define MI_ACTION_BAR_WIDTH 30
 #define CONFIRMAR_DETENER_MS 2500
 
-#define KEY_BG_INDEX 100
-#define KEY_FG_INDEX 101
+#define KEY_BG_INDEX 100   // 2.2: índice de color de fondo (solo para migrar)
+#define KEY_FG_INDEX 101   // 2.2: índice de color de letras (solo para migrar)
 #define KEY_CICLO_ACTIVO 102
 #define KEY_INICIO_EPOCH 103
 #define KEY_PAUSADO 104
@@ -17,41 +17,59 @@
 #define KEY_DURACION_SEGMENTO 107
 #define KEY_INICIO_MS 108
 #define KEY_PAUSA_INICIO_MS 109
+#define KEY_TEMA 110
 
 // ===================== Textos (español / inglés) =====================
 typedef struct {
   const char *titulo, *por_lado_normal, *por_lado_rapido, *preparate, *toca;
   const char *pausado, *tramo, *listo, *otra_vez;
-  const char *normal, *rapido, *color_fondo, *color_letras;
-  const char *colores[10];
+  const char *normal, *rapido, *tema;
+  const char *temas[8];
 } Textos;
 
 static const Textos ES = {
   "Cepillado", "30s por lado", "15s por lado", "Prepárate...", "Toca o SELECT",
   "Pausado (%d de %d)", "Tramo %d de %d", "¡Listo, cepillado!", "Atrás otra vez: detener",
-  "NORMAL", "RÁPIDO", "Color de fondo", "Color de letras",
-  { "Blanco", "Negro", "Azul", "Verde", "Rojo", "Amarillo", "Naranja", "Morado", "Magenta", "Gris claro" },
+  "NORMAL", "RÁPIDO", "Tema",
+  { "Clásico", "Noche", "Solarizado", "Menta", "Océano", "Chicle", "Atardecer", "Limón" },
 };
 
 static const Textos EN = {
   "Brushing", "30s per side", "15s per side", "Get ready...", "Tap or SELECT",
   "Paused (%d of %d)", "Part %d of %d", "Done, all clean!", "Back again: stop",
-  "NORMAL", "QUICK", "Background color", "Text color",
-  { "White", "Black", "Blue", "Green", "Red", "Yellow", "Orange", "Purple", "Magenta", "Light gray" },
+  "NORMAL", "QUICK", "Theme",
+  { "Classic", "Night", "Solarized", "Mint", "Ocean", "Bubblegum", "Sunset", "Lemon" },
 };
 
 static const Textos *T = &EN;
 
+// Temas: pares fondo (zona revelada) / cortina con contraste de al menos 7,6:1,
+// porque el texto se lee sobre los dos al cruzar la cortina.
+typedef struct { GColor fondo, cortina; } Tema;
 #if defined(PBL_COLOR)
-  #define NUM_COLORS 10
-  static const GColor PALETTE[NUM_COLORS] = {
-    GColorWhite, GColorBlack, GColorBlue, GColorGreen,
-    GColorRed, GColorYellow, GColorOrange, GColorPurple,
-    GColorMagenta, GColorLightGray
+  #define NUM_TEMAS 8
+  static const Tema TEMAS[NUM_TEMAS] = {
+    { {GColorWhiteARGB8}, {GColorBlackARGB8} },                     // Clásico
+    { {GColorBlackARGB8}, {GColorWhiteARGB8} },                     // Noche
+    { {GColorPastelYellowARGB8}, {GColorMidnightGreenARGB8} },      // Solarizado
+    { {GColorMintGreenARGB8}, {GColorDarkGreenARGB8} },             // Menta
+    { {GColorPictonBlueARGB8}, {GColorOxfordBlueARGB8} },           // Océano
+    { {GColorRichBrilliantLavenderARGB8}, {GColorImperialPurpleARGB8} }, // Chicle
+    { {GColorRajahARGB8}, {GColorBulgarianRoseARGB8} },             // Atardecer
+    { {GColorYellowARGB8}, {GColorBlackARGB8} },                    // Limón
+  };
+  // Paleta de la 2.2, para convertir la elección antigua al tema más parecido.
+  static const GColor PALETA_2_2[10] = {
+    {GColorWhiteARGB8}, {GColorBlackARGB8}, {GColorBlueARGB8}, {GColorGreenARGB8}, {GColorRedARGB8},
+    {GColorYellowARGB8}, {GColorOrangeARGB8}, {GColorPurpleARGB8}, {GColorMagentaARGB8}, {GColorLightGrayARGB8}
   };
 #else
-  #define NUM_COLORS 2
-  static const GColor PALETTE[NUM_COLORS] = { GColorWhite, GColorBlack };
+  #define NUM_TEMAS 2
+  static const Tema TEMAS[NUM_TEMAS] = {
+    { {GColorWhiteARGB8}, {GColorBlackARGB8} },
+    { {GColorBlackARGB8}, {GColorWhiteARGB8} },
+  };
+  static const GColor PALETA_2_2[2] = { {GColorWhiteARGB8}, {GColorBlackARGB8} };
 #endif
 
 // Fredoka (solo dígitos), lo más grande que admite cada plataforma: el
@@ -62,8 +80,7 @@ static const Textos *T = &EN;
   #define FUENTE_NUMEROS RESOURCE_ID_FREDOKA_CHICA_72
 #endif
 
-static int s_bg_index = 0;
-static int s_fg_index = 1;
+static int s_tema = 0;
 static GColor s_bg_color;
 static GColor s_fg_color;
 static GFont s_fuente_numeros;
@@ -141,8 +158,8 @@ static void refrescar_lienzo(void) {
 static void refrescar_action_bar(void) { if (s_action_bar_layer) layer_mark_dirty(s_action_bar_layer); }
 
 static void apply_theme(void) {
-  s_bg_color = PALETTE[s_bg_index];
-  s_fg_color = PALETTE[s_fg_index];
+  s_bg_color = TEMAS[s_tema].fondo;
+  s_fg_color = TEMAS[s_tema].cortina;
   if (s_window) window_set_background_color(s_window, s_bg_color);
   refrescar_lienzo();
   refrescar_action_bar();
@@ -554,45 +571,55 @@ static void confirmar_modo_y_empezar(void) {
   iniciar_cuenta_regresiva();
 }
 
-// ===================== Ventana de configuración (colores) =====================
-static uint16_t settings_get_num_sections_cb(MenuLayer *menu_layer, void *context) { return 2; }
-static uint16_t settings_get_num_rows_cb(MenuLayer *menu_layer, uint16_t section_index, void *context) { return NUM_COLORS; }
+// ===================== Ventana de configuración (tema) =====================
+static uint16_t settings_get_num_sections_cb(MenuLayer *menu_layer, void *context) { return 1; }
+static uint16_t settings_get_num_rows_cb(MenuLayer *menu_layer, uint16_t section_index, void *context) { return NUM_TEMAS; }
 static int16_t settings_get_header_height_cb(MenuLayer *menu_layer, uint16_t section_index, void *context) { return MENU_CELL_BASIC_HEADER_HEIGHT; }
+static int16_t settings_get_cell_height_cb(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) { return 44; }
 
 static void settings_draw_header_cb(GContext *ctx, const Layer *cell_layer, uint16_t section_index, void *context) {
-  menu_cell_basic_header_draw(ctx, cell_layer, section_index == 0 ? T->color_fondo : T->color_letras);
+  menu_cell_basic_header_draw(ctx, cell_layer, T->tema);
+}
+
+// Muestra del tema: una ficha con el fondo y otra con la cortina, cada una con
+// el número en el color que tendría encima.
+static void dibujar_ficha(GContext *ctx, GRect r, GColor relleno, GColor texto, GColor borde) {
+  graphics_context_set_fill_color(ctx, relleno);
+  graphics_fill_rect(ctx, r, 3, GCornersAll);
+  graphics_context_set_stroke_color(ctx, borde);
+  graphics_draw_round_rect(ctx, r, 3);
+  graphics_context_set_text_color(ctx, texto);
+  graphics_draw_text(ctx, "12", fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+    GRect(r.origin.x, r.origin.y + (r.size.h - 24) / 2 - 1, r.size.w, 24),
+    GTextOverflowModeFill, GTextAlignmentCenter, NULL);
 }
 
 static void settings_draw_row_cb(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context) {
   GRect bounds = layer_get_bounds(cell_layer);
+  const Tema *t = &TEMAS[cell_index->row];
   // La fila resaltada tiene fondo oscuro: texto y marcas en blanco para que se lean.
   GColor tinta = menu_cell_layer_is_highlighted(cell_layer) ? GColorWhite : GColorBlack;
-  GRect muestra = GRect(PBL_IF_ROUND_ELSE(22, 6), (bounds.size.h - 18) / 2, 18, 18);
-  graphics_context_set_fill_color(ctx, PALETTE[cell_index->row]);
-  graphics_fill_rect(ctx, muestra, 3, GCornersAll);
-  graphics_context_set_stroke_color(ctx, tinta);
-  graphics_draw_round_rect(ctx, muestra, 3);
+  int x = PBL_IF_ROUND_ELSE(20, 6), lado = PBL_IF_ROUND_ELSE(22, 28), y = (bounds.size.h - lado) / 2;
+  dibujar_ficha(ctx, GRect(x, y, lado, lado), t->fondo, t->cortina, tinta);
+  dibujar_ficha(ctx, GRect(x + lado + 3, y, lado, lado), t->cortina, t->fondo, tinta);
 
+  int x_texto = x + 2 * lado + 10;
   graphics_context_set_text_color(ctx, tinta);
-  graphics_draw_text(ctx, T->colores[cell_index->row], fonts_get_system_font(FONT_KEY_GOTHIC_18),
-    GRect(muestra.origin.x + 26, (bounds.size.h - 24) / 2, bounds.size.w - muestra.origin.x - 50, 24),
+  // En redondo el ancho útil es menor: letra normal para que quepan «Bubblegum» y «Solarizado».
+  graphics_draw_text(ctx, T->temas[cell_index->row],
+    fonts_get_system_font(PBL_IF_ROUND_ELSE(FONT_KEY_GOTHIC_18, FONT_KEY_GOTHIC_18_BOLD)),
+    GRect(x_texto, (bounds.size.h - 24) / 2, bounds.size.w - x_texto - PBL_IF_ROUND_ELSE(22, 20), 24),
     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
 
-  int selected = (cell_index->section == 0) ? s_bg_index : s_fg_index;
-  if (cell_index->row == selected) {
+  if (cell_index->row == s_tema) {
     graphics_context_set_fill_color(ctx, tinta);
-    graphics_fill_circle(ctx, GPoint(bounds.size.w - PBL_IF_ROUND_ELSE(30, 14), bounds.size.h / 2), 4);
+    graphics_fill_circle(ctx, GPoint(bounds.size.w - PBL_IF_ROUND_ELSE(14, 10), bounds.size.h / 2), 4);
   }
 }
 
 static void settings_select_click_cb(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
-  if (cell_index->section == 0) {
-    s_bg_index = cell_index->row;
-    persist_write_int(KEY_BG_INDEX, s_bg_index);
-  } else {
-    s_fg_index = cell_index->row;
-    persist_write_int(KEY_FG_INDEX, s_fg_index);
-  }
+  s_tema = cell_index->row;
+  persist_write_int(KEY_TEMA, s_tema);
   apply_theme();
   menu_layer_reload_data(menu_layer);
 }
@@ -606,11 +633,13 @@ static void settings_window_load(Window *window) {
     .get_num_sections = settings_get_num_sections_cb,
     .get_num_rows = settings_get_num_rows_cb,
     .get_header_height = settings_get_header_height_cb,
+    .get_cell_height = settings_get_cell_height_cb,
     .draw_header = settings_draw_header_cb,
     .draw_row = settings_draw_row_cb,
     .select_click = settings_select_click_cb,
   };
   menu_layer_set_callbacks(s_menu_layer, NULL, callbacks);
+  menu_layer_set_selected_index(s_menu_layer, MenuIndex(0, s_tema), MenuRowAlignCenter, false);
   menu_layer_set_click_config_onto_window(s_menu_layer, window);
   layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
 }
@@ -799,11 +828,31 @@ static void window_unload(Window *window) {
 }
 
 // ===================== Ciclo de vida =====================
+// Distancia entre dos colores de Pebble (2 bits por canal).
+static int distancia(GColor a, GColor b) {
+  int dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+  return dr * dr + dg * dg + db * db;
+}
+
 static void cargar_preferencias(void) {
-  s_bg_index = persist_exists(KEY_BG_INDEX) ? persist_read_int(KEY_BG_INDEX) : 0;
-  s_fg_index = persist_exists(KEY_FG_INDEX) ? persist_read_int(KEY_FG_INDEX) : (NUM_COLORS > 1 ? 1 : 0);
-  if (s_bg_index < 0 || s_bg_index >= NUM_COLORS) s_bg_index = 0;
-  if (s_fg_index < 0 || s_fg_index >= NUM_COLORS) s_fg_index = (NUM_COLORS > 1) ? 1 : 0;
+  if (persist_exists(KEY_TEMA)) {
+    s_tema = persist_read_int(KEY_TEMA);
+  } else if (persist_exists(KEY_BG_INDEX) || persist_exists(KEY_FG_INDEX)) {
+    // Viene de la 2.2: el par de colores elegido pasa al tema más parecido.
+    int n = ARRAY_LENGTH(PALETA_2_2);
+    int bg = persist_exists(KEY_BG_INDEX) ? persist_read_int(KEY_BG_INDEX) : 0;
+    int fg = persist_exists(KEY_FG_INDEX) ? persist_read_int(KEY_FG_INDEX) : 1;
+    if (bg < 0 || bg >= n) bg = 0;
+    if (fg < 0 || fg >= n) fg = 1;
+    int mejor = 0, mejor_d = 1000;
+    for (int i = 0; i < NUM_TEMAS; i++) {
+      int d = distancia(PALETA_2_2[bg], TEMAS[i].fondo) + distancia(PALETA_2_2[fg], TEMAS[i].cortina);
+      if (d < mejor_d) { mejor_d = d; mejor = i; }
+    }
+    s_tema = mejor;
+    persist_write_int(KEY_TEMA, s_tema);
+  }
+  if (s_tema < 0 || s_tema >= NUM_TEMAS) s_tema = 0;
 }
 
 static void init(void) {
@@ -815,6 +864,16 @@ static void init(void) {
   cargar_preferencias();
   cargar_estado_ciclo(lanzado_por_wakeup);
 #ifdef CAPTURAS
+  // Cada modelo a color luce un tema distinto en las capturas de la tienda.
+#if defined(PBL_PLATFORM_EMERY)
+  s_tema = 2;   // Solarizado
+#elif defined(PBL_PLATFORM_BASALT)
+  s_tema = 3;   // Menta
+#elif defined(PBL_PLATFORM_CHALK)
+  s_tema = 5;   // Chicle
+#elif defined(PBL_PLATFORM_GABBRO)
+  s_tema = 4;   // Océano
+#endif
   s_ciclo_activo = true;
   s_pausado = false;
   calcular_avance();
