@@ -1,0 +1,31 @@
+{
+  "name": "t-tt",
+  "author": "Rucolastico",
+  "version": "2.2.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Tútt Cepillado",
+    "uuid": "349dee92-a4d4-431f-93d5-6bc12c101adf",
+    "sdkVersion": "3",
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [],
+    "resources": {
+      "media": []
+    }
+  }
+}
