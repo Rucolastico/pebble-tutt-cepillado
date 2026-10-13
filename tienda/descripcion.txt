@@ -1,0 +1,5 @@
+Tútt es un temporizador para guiar tu cepillado dental: 3 minutos en 6 tramos de 30 segundos (o 15 s en modo rápido), con cuenta regresiva de 3 s, vibración clara en cada cambio de tramo y una cortina de progreso que va descubriendo la pantalla. Elige entre 8 temas de color con buen contraste. Si cierras la app, el reloj la vuelve a abrir en el siguiente tramo. Pausa con Arriba; Atrás dos veces para detener. En español e inglés.
+
+Tútt is a toothbrushing timer: 3 minutes in 6 parts of 30 seconds (or 15 s in quick mode), with a 3 s countdown, a clear vibration on every part change and a progress curtain that uncovers the screen. Pick one of 8 high-contrast color themes. If you close the app, the watch reopens it at the next part. Pause with Up; press Back twice to stop. In English and Spanish.
+
+Código / Source: https://github.com/Rucolastico/pebble-tutt-cepillado
