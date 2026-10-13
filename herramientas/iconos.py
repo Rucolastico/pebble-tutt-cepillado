@@ -63,13 +63,24 @@ def icono_tienda(lado):
     return img.resize((lado, lado), Image.LANCZOS)
 
 
+def nitido(img, lado):
+    """Reduce a lado×lado sin antialias: cada píxel queda negro opaco o transparente,
+    como los iconos del sistema, que el lanzador invierte en la fila seleccionada."""
+    alfa = img.resize((lado, lado), Image.LANCZOS).getchannel("A")
+    alfa = alfa.point(lambda a: 255 if a >= 110 else 0)
+    out = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    out.putalpha(alfa)
+    return out
+
+
 def icono_menu(lado=25):
+    # Estilo de los iconos de PebbleOS: contorno negro de ~2 px sobre fondo transparente.
     s = lado * ESCALA
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, s - 1, s - 1], radius=s // 5, fill=FONDO)
-    diente(d, s / 2, s / 2 + s * 0.03, s * 0.80, CREMA)
-    return img.resize((lado, lado), Image.LANCZOS)
+    pts = [(s / 2 + (x - 50) * s * 0.86 / 100, s / 2 + (y - 51) * s * 0.86 / 100) for x, y in catmull_rom(DIENTE)]
+    d.line(pts + pts[:2], fill=(0, 0, 0, 255), width=int(2.1 * ESCALA), joint="curve")
+    return nitido(img, lado)
 
 
 if __name__ == "__main__":

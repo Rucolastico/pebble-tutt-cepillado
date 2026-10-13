@@ -24,7 +24,7 @@ Publicada en la tienda: https://apps.repebble.com/65ac389e4d2e43a9b4e87658 (UUID
 - `sdkVersion` en package.json siempre "3" (también con SDK 4 y touch); el SDK actual rechaza "4".
 - Fuentes: el conversor limita cada glifo a 512 bytes en emery/gabbro y 256 en el resto. Por eso FREDOKA_GRANDE_96 (emery, gabbro) y FREDOKA_CHICA_72 (resto); más grande no compila.
 - Plataformas: aplite, basalt, chalk, diorite, emery, flint, gabbro.
-- Iconos: `herramientas/iconos.py` (diente con anillo de progreso, colores del tema Solarizado) genera el de menú (resources/images, 25×25) y los de la tienda (tienda/icono-80 y -144). `pebble publish` solo sube iconos al crear la app: en una app existente se cambian en el dashboard.
+- Iconos: `herramientas/iconos.py` genera el de menú (resources/images, 25×25: contorno negro del diente al estilo de los iconos de PebbleOS, sin fondo ni antialias) y los de la tienda (diente con anillo de progreso en colores Solarizado) (tienda/icono-80 y -144). `pebble publish` solo sube iconos al crear la app: en una app existente se cambian en el dashboard.
 - `herramientas/capturas.sh` congela el ciclo a media pantalla (`#define CAPTURAS`) y saca las capturas de la tienda, con un tema distinto por modelo a color; hace `pebble clean` porque waf no nota el cambio de una línea.
 
 ## Compilar
