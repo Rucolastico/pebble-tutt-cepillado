@@ -390,8 +390,17 @@ static void borrar_estado_ciclo(void) {
   persist_write_bool(KEY_CICLO_ACTIVO, false);
 }
 
+// El SDK no deja elegir la intensidad: pulsos largos se notan más porque el
+// motor llega a su velocidad máxima. La cuenta regresiva y la pausa conservan
+// los pulsos cortos del sistema para no confundirse con estos.
+static void vibrar_cambio_tramo(void) {
+  static const uint32_t segments[] = { 350, 150, 350 };
+  VibePattern pattern = { .durations = segments, .num_segments = ARRAY_LENGTH(segments) };
+  vibes_enqueue_custom_pattern(pattern);
+}
+
 static void vibrar_patron_completado(void) {
-  static const uint32_t segments[] = { 200, 100, 200, 100, 200 };
+  static const uint32_t segments[] = { 500, 200, 500, 200, 500 };
   VibePattern pattern = { .durations = segments, .num_segments = ARRAY_LENGTH(segments) };
   vibes_enqueue_custom_pattern(pattern);
 }
@@ -456,7 +465,7 @@ static void tick_handler(void *data) {
     return;
   }
   if (s_segmento_actual != tramo_previo) {
-    vibes_double_pulse();
+    vibrar_cambio_tramo();
     actualizar_status();
   }
   refrescar_lienzo();
@@ -480,7 +489,7 @@ static void iniciar_ciclo(void) {
   calcular_avance();
 
   guardar_estado_ciclo();
-  vibes_double_pulse();
+  vibrar_cambio_tramo();
 
   actualizar_status();
   refrescar_lienzo();
@@ -519,7 +528,7 @@ static void cargar_estado_ciclo(bool lanzado_por_wakeup) {
   s_completado = false;
   if (!s_pausado) {
     reanudar_ticks();
-    if (lanzado_por_wakeup) vibes_double_pulse();
+    if (lanzado_por_wakeup) vibrar_cambio_tramo();
   }
 }
 

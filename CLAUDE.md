@@ -6,7 +6,7 @@ Publicada en la tienda: https://apps.repebble.com/65ac389e4d2e43a9b4e87658 (UUID
 ## Funcionamiento
 - 6 tramos por ciclo. Modo Normal = 30 s por tramo (3 min), modo Rápido = 15 s por tramo.
 - Flujo: SELECT o toque -> elegir modo (UP/DOWN alternan) -> SELECT/toque confirma -> cuenta regresiva de 3 s -> ciclo.
-- Vibración doble al cambiar de tramo; patrón de 3 pulsos al terminar.
+- Vibración al cambiar de tramo (y al empezar): 2 pulsos de 350 ms; al terminar: 3 de 500 ms. El SDK no tiene control de intensidad, así que se alargan los pulsos. Cuenta regresiva y pausa usan los pulsos cortos del sistema.
 - Pantalla completa = cortina de progreso: el color de letras cubre todo y se revela el color de fondo de arriba hacia abajo.
 - Título y estado cambian de color según queden sobre la cortina o sobre la zona revelada.
 - Números con Fredoka SemiBold (solo dígitos), centrados. Se pintan dos veces en dos capas recortadas a cada lado de la cortina (`s_numero_sobre` / `s_numero_bajo`), así el número cambia de color justo donde la cruza.
