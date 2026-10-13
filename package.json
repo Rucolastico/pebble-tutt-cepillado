@@ -48,6 +48,12 @@
             "flint",
             "aplite"
           ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICONO_MENU",
+          "file": "images/icono-menu.png",
+          "menuIcon": true
         }
       ]
     }

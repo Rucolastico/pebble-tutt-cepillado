@@ -34,7 +34,7 @@ pebble build
 pebble install --emulator emery
 ```
 
-`herramientas/capturas.sh` genera las capturas de la tienda.
+`herramientas/capturas.sh` genera las capturas de la tienda y `herramientas/iconos.py`, los iconos.
 
 ## Licencia
 
